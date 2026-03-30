@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes - IDS Hybride{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-filter me-2"></i>Filtres
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Niveau de Risque</label>
+                        <select name="risk_level" class="form-select">
+                            <option value="">Tous</option>
+                            <option value="critical" {% if request.args.get('risk_level') == 'critical' %}selected{% endif %}>Critique</option>
+                            <option value="high" {% if request.args.get('risk_level') == 'high' %}selected{% endif %}>Élevé</option>
+                            <option value="medium" {% if request.args.get('risk_level') == 'medium' %}selected{% endif %}>Moyen</option>
+                            <option value="low" {% if request.args.get('risk_level') == 'low' %}selected{% endif %}>Faible</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Méthode de Détection</label>
+                        <select name="method" class="form-select">
+                            <option value="">Toutes</option>
+                            <option value="rule" {% if request.args.get('method') == 'rule' %}selected{% endif %}>Rule-Based</option>
+                            <option value="ml" {% if request.args.get('method') == 'ml' %}selected{% endif %}>Machine Learning</option>
+                            <option value="hybrid" {% if request.args.get('method') == 'hybrid' %}selected{% endif %}>Hybride</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Recherche</label>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="IP, type d'alerte..." 
+                               value="{{ request.args.get('search', '') }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-1"></i> Filtrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-list-ul me-2"></i>
+                    Liste des Alertes 
+                    <span class="badge bg-secondary">{{ alerts|length }}</span>
+                </span>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="clearAlerts()">
+                        <i class="bi bi-trash me-1"></i>Effacer tout
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>IP Source</th>
+                                <th>IP Dest</th>
+                                <th>Type d'Alerte</th>
+                                <th>Description</th>
+                                <th>Risque</th>
+                                <th>Méthode</th>
+                                <th>Confiance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr class="alert-{{ alert.risk_level }}">
+                                <td>{{ alert.id }}</td>
+                                <td><small>{{ alert.timestamp }}</small></td>
+                                <td><code>{{ alert.source_ip }}</code></td>
+                                <td><code>{{ alert.dest_ip or '-' }}</code></td>
+                                <td>
+                                    <strong>{{ alert.alert_type }}</strong>
+                                </td>
+                                <td>
+                                    <small>{{ alert.description[:60] }}{% if alert.description|length > 60 %}...{% endif %}</small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-risk-{{ alert.risk_level }}">
+                                        {{ alert.risk_level|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-method-{{ alert.detection_method }}">
+                                        {{ alert.detection_method|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if alert.confidence_score %}
+                                    <div class="progress" style="width: 60px;">
+                                        <div class="progress-bar bg-primary" 
+                                             style="width: {{ alert.confidence_score * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <small>{{ "%.1f"|format(alert.confidence_score * 100) }}%</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="text-muted mt-3">Aucune alerte trouvée</h5>
+                    <p class="text-muted">Lancez une analyse depuis le dashboard pour détecter des menaces.</p>
+                    <a href="/" class="btn btn-primary">
+                        <i class="bi bi-speedometer2 me-1"></i> Aller au Dashboard
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques rapides -->
+{% if alerts %}
+<div class="row mt-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">{{ alerts|selectattr('risk_level', 'equalto', 'critical')|list|length }}</h3>
+                <small class="text-muted">Critiques</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{{ alerts|selectattr('risk_level', 'equalto', 'high')|list|length }}</h3>
+                <small class="text-muted">Élevés</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">{{ alerts|selectattr('risk_level', 'equalto', 'medium')|list|length }}</h3>
+                <small class="text-muted">Moyens</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ alerts|selectattr('risk_level', 'equalto', 'low')|list|length }}</h3>
+                <small class="text-muted">Faibles</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

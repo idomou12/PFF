@@ -1,0 +1,25 @@
+# IDS Hybride - Dépendances Python
+# Installer avec: pip install -r requirements.txt
+
+# Traitement des données
+pandas>=1.5.0
+numpy>=1.23.0
+
+# Machine Learning
+scikit-learn>=1.1.0
+xgboost>=1.7.0
+
+# Base de données
+mysql-connector-python>=8.0.0
+
+# Application Web
+flask>=2.2.0
+werkzeug>=2.2.0
+
+# Visualisation
+matplotlib>=3.6.0
+seaborn>=0.12.0
+
+# Utilitaires
+joblib>=1.2.0
+python-dotenv>=1.0.0

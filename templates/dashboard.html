@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - IDS Hybride{% endblock %}
+
+{% block content %}
+<!-- Statistiques Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_alerts }}</div>
+                    <div class="stat-label">Total Alertes</div>
+                </div>
+                <div class="stat-icon bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.critical_alerts }}</div>
+                    <div class="stat-label">Alertes Critiques</div>
+                </div>
+                <div class="stat-icon bg-warning text-white">
+                    <i class="bi bi-bug-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.today_alerts }}</div>
+                    <div class="stat-label">Alertes Aujourd'hui</div>
+                </div>
+                <div class="stat-icon bg-info text-white">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_traffic }}</div>
+                    <div class="stat-label">Logs Trafic</div>
+                </div>
+                <div class="stat-icon bg-primary text-white">
+                    <i class="bi bi-activity"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton Analyse -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h5 class="mb-1"><i class="bi bi-play-circle me-2"></i>Analyse du Trafic</h5>
+                        <p class="text-muted mb-0">Lancer l'analyse hybride sur le dataset de test</p>
+                    </div>
+                    <button id="analyzeBtn" class="btn btn-primary btn-lg" >
+                        <span id="analyzeSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
+                        <i class="bi bi-lightning-fill me-2"></i>Lancer l'Analyse
+                    </button>
+                </div>
+                <div id="dashboardStatus" class="alert alert-info py-1 mb-0" role="status">
+                    Statut : prêt à charger les statistiques.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques et Statistiques -->
+<div class="row mb-4">
+    <!-- Distribution par Méthode -->
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-pie-chart me-2"></i>Distribution par Méthode de Détection
+            </div>
+            <div class="card-body">
+                <canvas id="methodChart" height="200"></canvas>
+                <p id="methodNoData" class="text-muted text-center py-4" style="display:none">Aucune donnée disponible</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Distribution par Risque -->
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-bar-chart me-2"></i>Distribution par Niveau de Risque
+            </div>
+            <div class="card-body">
+                <canvas id="riskChart" height="200"></canvas>
+                <p id="riskNoData" class="text-muted text-center py-4" style="display:none">Aucune donnée disponible</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Distribution par Type d'Attaque -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Top 10 Types d'Attaques Détectées
+            </div>
+            <div class="card-body">
+                <canvas id="attackChart" height="100"></canvas>
+                <p id="attackNoData" class="text-muted text-center py-4" style="display:none">Aucune donnée disponible</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes Récentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i>Alertes Récentes</span>
+                <a href="/alerts" class="btn btn-sm btn-outline-primary">Voir tout</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>IP Source</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Risque</th>
+                                <th>Méthode</th>
+                                <th>Confiance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in recent_alerts %}
+                            <tr>
+                                <td><small>{{ alert.timestamp }}</small></td>
+                                <td><code>{{ alert.source_ip }}</code></td>
+                                <td>{{ alert.alert_type }}</td>
+                                <td><small>{{ alert.description[:50] }}{% if alert.description|length > 50 %}...{% endif %}</small></td>
+                                <td>
+                                    <span class="badge badge-risk-{{ alert.risk_level }}">
+                                        {{ alert.risk_level|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-method-{{ alert.detection_method }}">
+                                        {{ alert.detection_method|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if alert.confidence_score %}
+                                    {{ "%.1f"|format(alert.confidence_score * 100) }}%
+                                    {% else %}
+                                    100%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Aucune alerte à afficher. Lancez une analyse pour commencer.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    initDashboardCharts();
+</script>
+{% endblock %}
