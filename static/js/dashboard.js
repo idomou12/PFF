@@ -185,10 +185,10 @@ function runAnalysis() {
                 'success'
             );
 
-            // 🔥 إعادة تحميل الإحصائيات
+            //  إعادة تحميل الإحصائيات
             initDashboardCharts();
 
-            // 🔥 تحديث الصفحة (اختياري لكن قوي)
+            // تحديث الصفحة  
             setTimeout(() => location.reload(), 1500);
 
         } else {
